@@ -35,10 +35,10 @@ Copy `.env.example` to `.env` for local experiments; `.env` is gitignored.
 
 ## Install
 
+Nothing to clone — `uvx` fetches and runs it straight from this repository:
+
 ```bash
-git clone https://github.com/freddy-jay/bring-mcp
-cd bring-mcp
-uv sync
+uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp
 ```
 
 ## Use it with Claude Code
@@ -47,7 +47,7 @@ uv sync
 claude mcp add bring \
   --env BRING_EMAIL=you@example.com \
   --env BRING_PASSWORD=your-password \
-  -- uv --directory /absolute/path/to/bring-mcp run bring-mcp
+  -- uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp
 ```
 
 ## Use it with Claude Desktop
@@ -58,8 +58,8 @@ Add this to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "bring": {
-      "command": "uv",
-      "args": ["--directory", "/absolute/path/to/bring-mcp", "run", "bring-mcp"],
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/freddy-jay/bring-mcp", "bring-mcp"],
       "env": {
         "BRING_EMAIL": "you@example.com",
         "BRING_PASSWORD": "your-password"
@@ -69,11 +69,27 @@ Add this to `claude_desktop_config.json`:
 }
 ```
 
+`uvx` caches the build after the first run. Pin a revision by appending
+`@<tag-or-sha>` to the git URL, and pass `--refresh` to pull a newer commit.
+
 ## Use it with any other MCP client
 
-The server speaks JSON-RPC over stdio. Run `bring-mcp` (or
-`uv run bring-mcp`) with `BRING_EMAIL` and `BRING_PASSWORD` set in its
-environment, and point the client at that command.
+The server speaks JSON-RPC over stdio. Point the client at the `uvx` command
+above, with `BRING_EMAIL` and `BRING_PASSWORD` set in its environment.
+
+## Run from a local checkout
+
+For hacking on the server:
+
+```bash
+git clone https://github.com/freddy-jay/bring-mcp
+cd bring-mcp
+uv sync
+uv run bring-mcp
+```
+
+Then give the client `uv --directory /absolute/path/to/bring-mcp run bring-mcp`
+as its command instead of the `uvx` form.
 
 ## Notes
 
