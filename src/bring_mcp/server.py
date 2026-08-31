@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 from importlib.metadata import version
 from typing import Any
 
@@ -208,14 +207,3 @@ async def complete_item(
         return await with_retry(call)
     except _HANDLED as exc:
         return _fail(f"Completing {item!r}", exc)
-
-
-def main() -> None:
-    """Run the server over stdio."""
-    # stdout carries the JSON-RPC framing, so every log line must go to stderr.
-    logging.basicConfig(
-        stream=sys.stderr,
-        level=os.environ.get("BRING_MCP_LOG_LEVEL", "INFO").upper(),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-    mcp.run(transport="stdio")

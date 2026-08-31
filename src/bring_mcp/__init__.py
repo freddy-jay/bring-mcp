@@ -1,5 +1,6 @@
 """MCP server for the Bring! shopping list API."""
 
-from .server import main, mcp
+from .cli import main
+from .server import mcp
 
 __all__ = ["main", "mcp"]

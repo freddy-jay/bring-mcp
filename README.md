@@ -22,16 +22,38 @@ account when there is just one.
 
 ## Configuration
 
-Credentials are read from the environment — nothing is stored in the repository.
+Credentials are read from the environment or the OS credential store — nothing is
+stored in the repository.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `BRING_EMAIL` | yes | Bring! account email |
-| `BRING_PASSWORD` | yes | Bring! account password |
+| `BRING_PASSWORD` | unless stored in the credential store | Bring! account password |
 | `BRING_LIST` | no | Default list name or uuid |
+| `BRING_KEYRING_SERVICE` | no | Credential store service name (default `bring-mcp`) |
 | `BRING_MCP_LOG_LEVEL` | no | `DEBUG`/`INFO`/`WARNING`/`ERROR`, logged to stderr |
 
-Copy `.env.example` to `.env` for local experiments; `.env` is gitignored.
+`BRING_PASSWORD` wins when both are set. Copy `.env.example` to `.env` for local
+experiments; `.env` is gitignored.
+
+### Keep the password out of the client config
+
+Putting `BRING_PASSWORD` in `claude_desktop_config.json` or `~/.claude.json`
+leaves it in plaintext on disk. Store it in Windows Credential Manager instead
+(macOS Keychain and the Secret Service on Linux work the same way):
+
+```bash
+uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp set-password --email you@example.com
+```
+
+The password is prompted for, never passed as an argument, so it stays out of
+your shell history. Then give the client only `BRING_EMAIL`, and the server
+looks the password up on each login.
+
+```bash
+bring-mcp status           # which backend is in use, and whether a password is stored
+bring-mcp delete-password  # remove it again
+```
 
 ## Install
 
@@ -61,8 +83,7 @@ Add this to `claude_desktop_config.json`:
       "command": "uvx",
       "args": ["--from", "git+https://github.com/freddy-jay/bring-mcp", "bring-mcp"],
       "env": {
-        "BRING_EMAIL": "you@example.com",
-        "BRING_PASSWORD": "your-password"
+        "BRING_EMAIL": "you@example.com"
       }
     }
   }
@@ -75,7 +96,7 @@ Add this to `claude_desktop_config.json`:
 ## Use it with any other MCP client
 
 The server speaks JSON-RPC over stdio. Point the client at the `uvx` command
-above, with `BRING_EMAIL` and `BRING_PASSWORD` set in its environment.
+above, with at least `BRING_EMAIL` set in its environment.
 
 ## Run from a local checkout
 
@@ -95,6 +116,8 @@ as its command instead of the `uvx` form.
 
 - The server logs in lazily on the first tool call and reuses the session, so a
   missing or wrong password surfaces as a tool error rather than a startup crash.
+- Bring! authenticates with email and password only; there is no API token to
+  scope or revoke, which is why the credential store is worth the extra step.
 - Where several items share a name, pass the `item_uuid` from `get_list_items`
   to `remove_item` or `complete_item` to target one precisely.
 
