@@ -57,19 +57,30 @@ bring-mcp delete-password  # remove it again
 
 ## Install
 
-Nothing to clone — `uvx` fetches and runs it straight from this repository:
+Install it once as a tool, so launching the server never touches the network:
 
 ```bash
-uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp
+uv tool install git+https://github.com/freddy-jay/bring-mcp
 ```
+
+That puts a `bring-mcp` executable on your PATH:
+
+| Platform | Path |
+| --- | --- |
+| macOS / Linux | `~/.local/bin/bring-mcp` |
+| Windows | `%USERPROFILE%\.local\bin\bring-mcp.exe` |
+
+Upgrade later with `uv tool upgrade bring-mcp`.
+
+Use the **absolute path** in every MCP client config below. Desktop apps launch
+their servers with a minimal PATH, so a bare `bring-mcp` may not resolve.
 
 ## Use it with Claude Code
 
 ```bash
 claude mcp add bring \
   --env BRING_EMAIL=you@example.com \
-  --env BRING_PASSWORD=your-password \
-  -- uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp
+  -- ~/.local/bin/bring-mcp
 ```
 
 ## Use it with Claude Desktop
@@ -80,23 +91,39 @@ Add this to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "bring": {
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/freddy-jay/bring-mcp", "bring-mcp"],
+      "command": "/Users/you/.local/bin/bring-mcp",
+      "args": [],
       "env": {
-        "BRING_EMAIL": "you@example.com"
+        "BRING_EMAIL": "you@example.com",
+        "BRING_LIST": "Shopping"
       }
     }
   }
 }
 ```
 
-`uvx` caches the build after the first run. Pin a revision by appending
-`@<tag-or-sha>` to the git URL, and pass `--refresh` to pull a newer commit.
+On Windows the command is `C:\\Users\\you\\.local\\bin\\bring-mcp.exe`
+(JSON needs the doubled backslashes).
 
 ## Use it with any other MCP client
 
-The server speaks JSON-RPC over stdio. Point the client at the `uvx` command
-above, with at least `BRING_EMAIL` set in its environment.
+The server speaks JSON-RPC over stdio. Point the client at the installed
+executable with at least `BRING_EMAIL` set in its environment.
+
+## Trying it without installing
+
+`uvx` can run it straight from the repository:
+
+```bash
+uvx --from git+https://github.com/freddy-jay/bring-mcp bring-mcp
+```
+
+This is fine for a quick look from a terminal, but **don't put it in a client
+config**: `uvx` re-resolves the git URL on every launch, so it needs `git` on
+PATH and a working network at startup. Claude Desktop launches servers with a
+minimal PATH, where `git` usually isn't visible, and the server dies with
+`Git executable not found` before it can speak. `uv tool install` avoids this
+entirely.
 
 ## Run from a local checkout
 
@@ -109,8 +136,8 @@ uv sync
 uv run bring-mcp
 ```
 
-Then give the client `uv --directory /absolute/path/to/bring-mcp run bring-mcp`
-as its command instead of the `uvx` form.
+`uv tool install --editable /path/to/bring-mcp` installs that checkout instead,
+so a `git pull` takes effect without reinstalling.
 
 ## Notes
 
